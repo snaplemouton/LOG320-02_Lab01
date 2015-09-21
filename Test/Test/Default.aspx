@@ -7,8 +7,8 @@
     <h2>
         Compression
     </h2>
-    <input type="file" id="fileDo" />
-    <button id="btnDo" onclick="doThis()">Compresser ce fichier</button>
+    <input type="file" id="fileDo" name="fileDo" />
+    <asp:Button runat="server" ID="btnDo" OnClick="doThis" Text="Compresser ce fichier" />
     <br />
     <hr />
     <h2>

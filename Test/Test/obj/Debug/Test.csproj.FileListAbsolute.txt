@@ -2,3 +2,7 @@ C:\Users\Maxime\Desktop\LOG320\Lab01\Test\Test\bin\Test.dll
 C:\Users\Maxime\Desktop\LOG320\Lab01\Test\Test\bin\Test.pdb
 C:\Users\Maxime\Desktop\LOG320\Lab01\Test\Test\obj\Debug\Test.dll
 C:\Users\Maxime\Desktop\LOG320\Lab01\Test\Test\obj\Debug\Test.pdb
+C:\Users\Maxime\Desktop\LOG320\Lab01\LOG320-02_Lab01\Test\Test\bin\Test.dll
+C:\Users\Maxime\Desktop\LOG320\Lab01\LOG320-02_Lab01\Test\Test\bin\Test.pdb
+C:\Users\Maxime\Desktop\LOG320\Lab01\LOG320-02_Lab01\Test\Test\obj\Debug\Test.dll
+C:\Users\Maxime\Desktop\LOG320\Lab01\LOG320-02_Lab01\Test\Test\obj\Debug\Test.pdb

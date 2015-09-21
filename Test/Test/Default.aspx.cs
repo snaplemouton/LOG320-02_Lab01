@@ -4,6 +4,8 @@ using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using System.IO;
+using Test.Classes;
 
 namespace Test
 {
@@ -14,9 +16,11 @@ namespace Test
 
         }
 
-        private void doThis()
+        protected void doThis(object sender, EventArgs e)
         {
-            
+            HttpPostedFile file = Request.Files["fileDo"];
+            FileManager fileManager = new FileManager();
+            fileManager.CompressFile(file);
         }
 
         private void dedoThis()
