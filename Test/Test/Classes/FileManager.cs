@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.IO;
+using System.Text;
 
 namespace Test.Classes
 {
@@ -31,8 +32,19 @@ namespace Test.Classes
             BinaryTree<CharData> binaryTree = BuildBinaryTree(lnkLstByte);
 
             // Build the new Byte Array
-            BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> binaryLnkLstByte = BuildBinaryLinkedList(binaryTree);
-            byte[] newLstByte = BuildNewByteArray(lstByte, binaryLnkLstByte);
+            //BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> binaryLnkLstByte = BuildBinaryLinkedList(binaryTree);
+            DictData binaryDictByte = BuildBinaryDict(binaryTree);
+            byte[] newLstByte = BuildNewByteArray(lstByte, binaryDictByte);
+            //byte[] newLstByte = BuildNewByteArray(lstByte, binaryLnkLstByte);
+            string fileName = file.FileName.Substring(0, file.FileName.LastIndexOf('.')) + ".yolo";
+            File.WriteAllBytes(HttpContext.Current.Server.MapPath(fileName), newLstByte);
+            HttpResponse response = System.Web.HttpContext.Current.Response;
+            response.ClearContent();
+            response.Clear();
+            response.AddHeader("Content-Disposition",
+                               "attachment; filename=" + fileName + ";");
+            response.WriteFile(HttpContext.Current.Server.MapPath(fileName));
+            response.End();
         }
         #endregion
 
@@ -90,9 +102,9 @@ namespace Test.Classes
 
             while (lnkLstByte.FirstNode.Next != null)
             {
-                currentLeftNode = lnkLstByte.FirstNode.Value;
-                lnkLstByte.RemoveFirstNode();
                 currentRightNode = lnkLstByte.FirstNode.Value;
+                lnkLstByte.RemoveFirstNode();
+                currentLeftNode = lnkLstByte.FirstNode.Value;
                 lnkLstByte.RemoveFirstNode();
                 combinedNode = new BinaryTreeNode<CharData>(new CharData(new KeyValuePair<byte, int>(new byte(), currentRightNode.Value.Pair.Value + currentLeftNode.Value.Pair.Value)), currentLeftNode, currentRightNode);
                 currentLeftNode.Parent = combinedNode;
@@ -108,10 +120,25 @@ namespace Test.Classes
         /// </summary>
         /// <param name="binaryTree">Binary tree to use.</param>
         /// <returns>The linked list containing the dictionary pair and their binary code in a descending order.</returns>
-        protected BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> BuildBinaryLinkedList(BinaryTree<CharData> binaryTree)
+        protected DictData BuildBinaryDict(BinaryTree<CharData> binaryTree)//BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> BuildBinaryLinkedList(BinaryTree<CharData> binaryTree)
         {
+            string headerTree = "";
+            string headerChars = "";
+            // The header is used to rebuild the binary tree when decompressing.
+            // Example...
+            //      o
+            //    /  \
+            //   o    o
+            //  / \  / \
+            // o  o  o  o
+            //     \   / \
+            //      o  o  o
+            // This binary tree would be made like this (If right = 01, left = 10 and parent = 11. 00 would mean the start and the end of the binary tree creation)
+            // 00 01 01 01 11 10 11 11 10 11 11 10 01 01 11 11 10 00
+
             string currentBinaryCode = "";
-            BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> lnkLstTemp = new BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>>();
+            //BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> lnkLstTemp = new BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>>();
+            DictData dictTmp = new DictData();
             BinaryTreeNode<CharData> currentNode = binaryTree.Root;
             bool isParent = false;
             while (currentNode != null)
@@ -120,6 +147,7 @@ namespace Test.Classes
                 {
                     // Has a right node
                     currentNode = currentNode.Right;
+                    headerTree += "01";
                     currentBinaryCode += "1";
                     isParent = false;
                 }
@@ -127,6 +155,7 @@ namespace Test.Classes
                 {
                     // Has a left node but not right
                     currentNode = currentNode.Left;
+                    headerTree += "10";
                     currentBinaryCode += "0";
                     isParent = false;
                 }
@@ -136,9 +165,12 @@ namespace Test.Classes
                     if (!isParent)
                     {
                         currentNode.Value.BinaryCode = currentBinaryCode;
-                        lnkLstTemp.InsertIntoList(new LinkedListNode<BinaryTreeNode<CharData>>(currentNode), false);
+                        headerChars += currentBinaryCode + Convert.ToString(Convert.ToByte(currentNode.Value.Pair.Key), 2);
+                        dictTmp.Add(currentNode.Value.Pair.Key, currentNode.Value.BinaryCode);
+                        //lnkLstTemp.InsertIntoList(new LinkedListNode<BinaryTreeNode<CharData>>(currentNode), false);
                     }
                     currentNode = currentNode.Parent;
+                    headerTree += "11";
                     isParent = true;
                     if (currentNode != null)
                     {
@@ -149,7 +181,11 @@ namespace Test.Classes
                     }
                 }
             }
-            return lnkLstTemp;
+            headerTree += "00";
+            dictTmp.FileHeader = headerTree + headerChars;
+            return dictTmp;
+            //lnkLstTemp.FileHeader = headerTree + headerChars;
+            //return lnkLstTemp;
         }
 
         /// <summary>
@@ -158,19 +194,23 @@ namespace Test.Classes
         /// <param name="oldByteArray">The original byte array used to change the bytes into the new bytes.</param>
         /// <param name="binaryLnkLstByte">The linked list containing the information used to compare the old bytes.</param>
         /// <returns>The new byte array used for the compressed file.</returns>
-        protected byte[] BuildNewByteArray(byte[] oldByteArray, BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> binaryLnkLstByte)
+        protected byte[] BuildNewByteArray(byte[] oldByteArray, DictData binaryDictByte) //BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> binaryLnkLstByte)
         {
-            string currentByteString = "";
             int i = 0;
-            // Go through the old byte array too create the new bytes.
+            // StringBuilder used to negate the speed lost from adding to a very long string.
+            StringBuilder sb = new StringBuilder();
+            sb.Append(binaryDictByte.FileHeader);
+            // Go through the old byte array to create the new bytes.
             while (i < oldByteArray.Length)
             {
-                currentByteString += FindByteInBinaryLinkedList(oldByteArray[i], binaryLnkLstByte.FirstNode);
+                sb.Append(binaryDictByte[oldByteArray[i]]);
+                //currentByteString += FindByteInBinaryLinkedList(oldByteArray[i], binaryLnkLstByte.FirstNode);
                 i++;
             }
+            string currentByteString = sb.ToString();
             int numOfExtraBits = currentByteString.Length % 8;
             if(numOfExtraBits > 0)
-                currentByteString = currentByteString.PadRight(currentByteString.Length + 8 - numOfExtraBits, '0');
+                currentByteString = currentByteString.PadLeft(currentByteString.Length + 8 - numOfExtraBits, '0');
             int numOfBytes = currentByteString.Length / 8;
             byte[] newByteArray = new byte[numOfBytes];
             for (int ii = 0; ii < numOfBytes; ii++)

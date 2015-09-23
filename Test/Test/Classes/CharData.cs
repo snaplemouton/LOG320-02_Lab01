@@ -5,6 +5,22 @@ using System.Web;
 
 namespace Test.Classes
 {
+    public class DictData : Dictionary<byte, string>
+    {
+        private string fileHeader;
+        public string FileHeader
+        {
+            get
+            {
+                return fileHeader;
+            }
+            set
+            {
+                fileHeader = value;
+            }
+        }
+    }
+
     public class CharData
     {
         private KeyValuePair<byte, int> pair;

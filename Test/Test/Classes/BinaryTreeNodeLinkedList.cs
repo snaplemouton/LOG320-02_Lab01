@@ -7,13 +7,26 @@ namespace Test.Classes
 {
     public class BinaryTreeNodeLinkedList<T> : LinkedList<BinaryTreeNode<CharData>>
     {
+        private string fileHeader = "";
+        public string FileHeader
+        {
+            get
+            {
+                return fileHeader;
+            }
+            set
+            {
+                fileHeader = value;
+            }
+        }
+
         public void InsertIntoList(LinkedListNode<BinaryTreeNode<CharData>> newLnkLstNode, bool asc)
         {
             // Check if we are at the first node
             if (this.FirstNode != null)
             {
-                // Check if smaller than First Node
-                if ((newLnkLstNode.Value.Value.Pair.Value < this.FirstNode.Value.Value.Pair.Value && asc) ||
+                // Check if smaller/equal or greater than First Node
+                if ((newLnkLstNode.Value.Value.Pair.Value <= this.FirstNode.Value.Value.Pair.Value && asc) ||
                     (newLnkLstNode.Value.Value.Pair.Value > this.FirstNode.Value.Value.Pair.Value && !asc))
                 {
                     // If yes, insert new node at the start of the Linked List.
@@ -29,8 +42,8 @@ namespace Test.Classes
                         // Go through the Linked List to find where to place the new node.
                         while (lnkLstNode != null)
                         {
-                            // Check if greater than the current Node.
-                            if ((newLnkLstNode.Value.Value.Pair.Value < lnkLstNode.Value.Value.Pair.Value && asc) ||
+                            // Check if smaller/equal or greater than the current Node.
+                            if ((newLnkLstNode.Value.Value.Pair.Value <= lnkLstNode.Value.Value.Pair.Value && asc) ||
                                 (newLnkLstNode.Value.Value.Pair.Value > lnkLstNode.Value.Value.Pair.Value && !asc))
                             {
                                 // If yes, insert new node at the previous next position and break the while loop.

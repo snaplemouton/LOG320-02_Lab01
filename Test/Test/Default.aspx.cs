@@ -21,6 +21,7 @@ namespace Test
             HttpPostedFile file = Request.Files["fileDo"];
             FileManager fileManager = new FileManager();
             fileManager.CompressFile(file);
+
         }
 
         private void dedoThis()
