@@ -20,6 +20,11 @@ namespace Test.Classes
             }
         }
 
+        /// <summary>
+        /// Insert a node into the linked list by comparing it's count value in the CharData of the node.
+        /// </summary>
+        /// <param name="newLnkLstNode">The node to add.</param>
+        /// <param name="asc">If the list is ascendant or descendant.</param>
         public void InsertIntoList(LinkedListNode<BinaryTreeNode<CharData>> newLnkLstNode, bool asc)
         {
             // Check if we are at the first node

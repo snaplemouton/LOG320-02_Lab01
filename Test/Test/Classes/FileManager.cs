@@ -32,12 +32,39 @@ namespace Test.Classes
             BinaryTree<CharData> binaryTree = BuildBinaryTree(lnkLstByte);
 
             // Build the new Byte Array
-            //BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> binaryLnkLstByte = BuildBinaryLinkedList(binaryTree);
             DictData binaryDictByte = BuildBinaryDict(binaryTree);
             byte[] newLstByte = BuildNewByteArray(lstByte, binaryDictByte);
-            //byte[] newLstByte = BuildNewByteArray(lstByte, binaryLnkLstByte);
-            string fileName = file.FileName.Substring(0, file.FileName.LastIndexOf('.')) + ".yolo";
+
+            // Save file on server and force download for the user.
+            string fileName = file.FileName + ".yolo";
             File.WriteAllBytes(HttpContext.Current.Server.MapPath(fileName), newLstByte);
+            HttpResponse response = System.Web.HttpContext.Current.Response;
+            response.ClearContent();
+            response.Clear();
+            response.AddHeader("Content-Disposition",
+                               "attachment; filename=" + fileName + ";");
+            response.WriteFile(HttpContext.Current.Server.MapPath(fileName));
+            response.End();
+        }
+
+        /// <summary>
+        /// Method used to decompress the previously compressed file and save it into its previous format.
+        /// </summary>
+        /// <param name="file">File to decompress.</param>
+        public void DecompressFile(HttpPostedFile file)
+        {
+            byte[] lstByte = null;
+            BinaryReader binaryReader = new BinaryReader(file.InputStream);
+            lstByte = binaryReader.ReadBytes(file.ContentLength);
+
+            // Rebuild the Binary Tree that will be used to provide the original Byte Array
+            BinaryTreeWithoutHeader<CharData> binaryTree = RebuildBinaryTree(lstByte);
+            // Rebuild the original byte list using the binary tree and encoded text found in the BinaryTreeWithoutHeader object.
+            byte[] originalLstByte = RebuildOriginalLstByte(binaryTree);
+
+            // Save file on server and force download for the user.
+            string fileName = file.FileName.Substring(0, file.FileName.LastIndexOf('.'));
+            File.WriteAllBytes(HttpContext.Current.Server.MapPath(fileName), originalLstByte);
             HttpResponse response = System.Web.HttpContext.Current.Response;
             response.ClearContent();
             response.Clear();
@@ -120,10 +147,9 @@ namespace Test.Classes
         /// </summary>
         /// <param name="binaryTree">Binary tree to use.</param>
         /// <returns>The linked list containing the dictionary pair and their binary code in a descending order.</returns>
-        protected DictData BuildBinaryDict(BinaryTree<CharData> binaryTree)//BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> BuildBinaryLinkedList(BinaryTree<CharData> binaryTree)
+        protected DictData BuildBinaryDict(BinaryTree<CharData> binaryTree)
         {
             string headerTree = "";
-            string headerChars = "";
             // The header is used to rebuild the binary tree when decompressing.
             // Example...
             //      o
@@ -133,11 +159,10 @@ namespace Test.Classes
             // o  o  o  o
             //     \   / \
             //      o  o  o
-            // This binary tree would be made like this (If right = 01, left = 10 and parent = 11. 00 would mean the start and the end of the binary tree creation)
-            // 00 01 01 01 11 10 11 11 10 11 11 10 01 01 11 11 10 00
+            // This binary tree would be made like this (If right = 01, left = 10 and parent = 11. 00 would mean the end of the binary tree creation)
+            // 01 01 01 11 10 11 11 10 11 11 10 01 01 11 11 10 11 11 11 00
 
             string currentBinaryCode = "";
-            //BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> lnkLstTemp = new BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>>();
             DictData dictTmp = new DictData();
             BinaryTreeNode<CharData> currentNode = binaryTree.Root;
             bool isParent = false;
@@ -161,16 +186,15 @@ namespace Test.Classes
                 }
                 else
                 {
+                    headerTree += "11";
                     // Is a Leaf
                     if (!isParent)
                     {
                         currentNode.Value.BinaryCode = currentBinaryCode;
-                        headerChars += currentBinaryCode + Convert.ToString(Convert.ToByte(currentNode.Value.Pair.Key), 2);
+                        headerTree += Convert.ToString(Convert.ToByte(currentNode.Value.Pair.Key), 2).PadLeft(8, '0');
                         dictTmp.Add(currentNode.Value.Pair.Key, currentNode.Value.BinaryCode);
-                        //lnkLstTemp.InsertIntoList(new LinkedListNode<BinaryTreeNode<CharData>>(currentNode), false);
                     }
                     currentNode = currentNode.Parent;
-                    headerTree += "11";
                     isParent = true;
                     if (currentNode != null)
                     {
@@ -182,19 +206,17 @@ namespace Test.Classes
                 }
             }
             headerTree += "00";
-            dictTmp.FileHeader = headerTree + headerChars;
+            dictTmp.FileHeader = headerTree;
             return dictTmp;
-            //lnkLstTemp.FileHeader = headerTree + headerChars;
-            //return lnkLstTemp;
         }
 
         /// <summary>
         /// Build the final byte array of the compressed file.
         /// </summary>
         /// <param name="oldByteArray">The original byte array used to change the bytes into the new bytes.</param>
-        /// <param name="binaryLnkLstByte">The linked list containing the information used to compare the old bytes.</param>
+        /// <param name="binaryDictByte">The Dictionary containing the information used to compare the old bytes.</param>
         /// <returns>The new byte array used for the compressed file.</returns>
-        protected byte[] BuildNewByteArray(byte[] oldByteArray, DictData binaryDictByte) //BinaryTreeNodeLinkedList<BinaryTreeNode<CharData>> binaryLnkLstByte)
+        protected byte[] BuildNewByteArray(byte[] oldByteArray, DictData binaryDictByte)
         {
             int i = 0;
             // StringBuilder used to negate the speed lost from adding to a very long string.
@@ -204,7 +226,6 @@ namespace Test.Classes
             while (i < oldByteArray.Length)
             {
                 sb.Append(binaryDictByte[oldByteArray[i]]);
-                //currentByteString += FindByteInBinaryLinkedList(oldByteArray[i], binaryLnkLstByte.FirstNode);
                 i++;
             }
             string currentByteString = sb.ToString();
@@ -219,26 +240,152 @@ namespace Test.Classes
             }
             return newByteArray;
         }
-
-        protected string FindByteInBinaryLinkedList(byte b, LinkedListNode<BinaryTreeNode<CharData>> n)
-        {
-            while (n != null)
-            {
-                if (n.Value.Value.Pair.Key == b)
-                    return n.Value.Value.BinaryCode;
-                n = n.Next;
-            }
-            return "";
-        }
         #endregion
 
+        #region Rebuild methods
         /// <summary>
-        /// Method used to decompress the previously compressed file and save it into its previous format.
+        /// Build a BinaryTreeWithoutHeader object that extend the BinaryTree class.
+        /// This object contains the encoded text as well as the binary tree.
         /// </summary>
-        /// <param name="file">File to decompress.</param>
-        public void DecompressFile(FileStream file)
+        /// <param name="lstByte">The byte list from the compressed file.</param>
+        /// <returns>The built BinaryTreeWithoutHeader object.</returns>
+        protected BinaryTreeWithoutHeader<CharData> RebuildBinaryTree(byte[] lstByte)
         {
-            // Do something
+            BinaryTreeNode<CharData> currentNode = new BinaryTreeNode<CharData>();
+            BinaryTreeWithoutHeader<CharData> binaryTree = new BinaryTreeWithoutHeader<CharData>();
+            binaryTree.Root = currentNode;
+
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in lstByte)
+            {
+                sb.Append(Convert.ToString(b, 2).PadLeft(8, '0'));
+            }
+            bool headerDone = false;
+            bool isCharCode = false;
+            bool isRight = true;
+            bool charCodeWasJustDone = false;
+            int index = 0;
+            string currentChunk = "";
+            string currentBinaryCode = "";
+            string previousBinaryCode = "";
+            while (!headerDone)
+            {
+                if (!isCharCode && currentChunk.Length == 2)
+                {
+                    // Do something with the tree
+                    switch (currentChunk)
+                    {
+                        case "01":
+                            // Going right
+                            currentBinaryCode += "1";
+                            charCodeWasJustDone = false;
+                            currentNode.Right = new BinaryTreeNode<CharData>();
+                            currentNode.Right.Parent = currentNode;
+                            currentNode = currentNode.Right;
+                            isRight = true;
+                            break;
+                        case "10":
+                            // Going left
+                            currentBinaryCode += "0";
+                            charCodeWasJustDone = false;
+                            currentNode.Left = new BinaryTreeNode<CharData>();
+                            currentNode.Left.Parent = currentNode;
+                            currentNode = currentNode.Left;
+                            isRight = false;
+                            break;
+                        case "11":
+                            // Going parent
+                            if (!charCodeWasJustDone)
+                            {
+                                isCharCode = true;
+                            }
+                            if (currentBinaryCode.Length > 0)
+                            {
+                                previousBinaryCode = currentBinaryCode;
+                                currentBinaryCode = currentBinaryCode.Substring(0, currentBinaryCode.Length - 1);
+                            }
+                            currentNode = currentNode.Parent;
+                            break;
+                        case "00":
+                            // Binary tree done
+                            if(charCodeWasJustDone)
+                                headerDone = true;
+                            break;
+                    }
+                    currentChunk = "";
+                }
+                else if (isCharCode && currentChunk.Length == 8)
+                {
+                    CharData nodeToAdd = new CharData(new KeyValuePair<byte, int>(), previousBinaryCode, Convert.ToByte(currentChunk, 2));
+                    // You got a char
+                    if (isRight)
+                    {
+                        currentNode.Right.Value = nodeToAdd;
+                    }
+                    else
+                    {
+                        currentNode.Left.Value = nodeToAdd;
+                    }
+                    isCharCode = false;
+                    charCodeWasJustDone = true;
+                    currentChunk = "";
+                }
+                if (!headerDone)
+                {
+                    currentChunk += sb[index];
+                    index++;
+                }
+            }
+            sb.Remove(0, index);
+            binaryTree.EncodedText = sb;
+            return binaryTree;
         }
+
+        /// <summary>
+        /// Rebuild the byte list from the original uncompressed file using the BinaryTreeWithoutHeader object made from the RebuildBinaryTree method.
+        /// </summary>
+        /// <param name="binaryTree">The BinaryTreeWithoutHeader object to use.</param>
+        /// <returns>The byte list from the original uncompressed file.</returns>
+        protected byte[] RebuildOriginalLstByte(BinaryTreeWithoutHeader<CharData> binaryTree)
+        {
+            List<byte> originalLstByteTmp = new List<byte>();
+            BinaryTreeNode<CharData> currentNode = binaryTree.Root;
+            String str = binaryTree.EncodedText.ToString(0, binaryTree.EncodedText.Length);
+            int i = 0;
+            while (i < binaryTree.EncodedText.Length)
+            {
+                if (str[i] == '0')
+                {
+                    // Move Left
+                    if (currentNode.Left != null)
+                    {
+                        currentNode = currentNode.Left;
+                    }
+                    else
+                    {
+                        originalLstByteTmp.Add(currentNode.Value.CharCode);
+                        currentNode = binaryTree.Root.Left;
+                    }
+                }
+                else
+                {
+                    // Move Right
+                    if (currentNode.Right != null)
+                    {
+                        currentNode = currentNode.Right;
+                    }
+                    else
+                    {
+                        originalLstByteTmp.Add(currentNode.Value.CharCode);
+                        currentNode = binaryTree.Root.Right;
+                    }
+                }
+                i++;
+            }
+            originalLstByteTmp.Add(currentNode.Value.CharCode);
+            byte[] originalByteArray = originalLstByteTmp.ToArray();
+            return originalByteArray;
+        }
+        #endregion
     }
 }

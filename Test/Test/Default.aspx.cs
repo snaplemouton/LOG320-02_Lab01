@@ -19,14 +19,42 @@ namespace Test
         protected void doThis(object sender, EventArgs e)
         {
             HttpPostedFile file = Request.Files["fileDo"];
-            FileManager fileManager = new FileManager();
-            fileManager.CompressFile(file);
+            if (file.ContentLength > 0)
+            {
+                FileManager fileManager = new FileManager();
+                fileManager.CompressFile(file);
+            }
+            else
+            {
+                popupAlert("Veuillez choisir un fichier à compresser.");
+            }
 
         }
 
-        private void dedoThis()
+        protected void dedoThis(object sender, EventArgs e)
         {
-            
+            HttpPostedFile file = Request.Files["fileDedo"];
+            if (file.ContentLength > 0)
+            {
+                FileManager fileManager = new FileManager();
+                fileManager.DecompressFile(file);
+            }
+            else
+            {
+                popupAlert("Veuillez choisir un fichier à décompresser.");
+            }
+        }
+
+        private void popupAlert(string message)
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append("<script type = 'text/javascript'>");
+            sb.Append("window.onload=function(){");
+            sb.Append("alert('");
+            sb.Append(message);
+            sb.Append("')};");
+            sb.Append("</script>");
+            ClientScript.RegisterClientScriptBlock(this.GetType(), "alert", sb.ToString());
         }
     }
 }

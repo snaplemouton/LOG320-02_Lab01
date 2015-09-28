@@ -14,6 +14,6 @@
     <h2>
         Décompression
     </h2>
-    <input type="file" id="fileDedo" />
-    <button id="btnDedo">Décompresser ce fichier</button>
+    <input type="file" id="fileDedo" name="fileDedo" />
+    <asp:Button runat="server" ID="btnDedo" OnClick="dedoThis" Text="Décompresser ce fichier" />
 </asp:Content>
