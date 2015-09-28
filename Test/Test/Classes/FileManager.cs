@@ -352,7 +352,7 @@ namespace Test.Classes
             BinaryTreeNode<CharData> currentNode = binaryTree.Root;
             String str = binaryTree.EncodedText.ToString(0, binaryTree.EncodedText.Length);
             int i = 0;
-            while (i < binaryTree.EncodedText.Length)
+            while (i < str.Length)
             {
                 if (str[i] == '0')
                 {
@@ -383,8 +383,7 @@ namespace Test.Classes
                 i++;
             }
             originalLstByteTmp.Add(currentNode.Value.CharCode);
-            byte[] originalByteArray = originalLstByteTmp.ToArray();
-            return originalByteArray;
+            return originalLstByteTmp.ToArray();
         }
         #endregion
     }
