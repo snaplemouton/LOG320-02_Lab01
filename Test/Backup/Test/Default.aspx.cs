@@ -24,11 +24,9 @@ namespace Test
 
         }
 
-        private void dedoThis(object sender, EventArgs e)
+        private void dedoThis()
         {
-            HttpPostedFile file = Request.Files["fileDedo"];
-            FileManager fileManager = new FileManager();
-            fileManager.
+            
         }
     }
 }

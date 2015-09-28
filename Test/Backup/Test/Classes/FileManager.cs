@@ -46,19 +46,6 @@ namespace Test.Classes
             response.WriteFile(HttpContext.Current.Server.MapPath(fileName));
             response.End();
         }
-
-        /// <summary>
-        /// Method used to decompress the previously compressed file and save it into its previous format.
-        /// </summary>
-        /// <param name="file">File to decompress.</param>
-        public void DecompressFile(HttpPostedFile file)
-        {
-            // Read the file and fill the byte list
-            byte[] lstByte = null;
-            BinaryReader binaryReader = new BinaryReader(file.InputStream);
-            lstByte = binaryReader.ReadBytes(file.ContentLength);
-        }
-
         #endregion
 
         #region Build methods
@@ -244,5 +231,14 @@ namespace Test.Classes
             return "";
         }
         #endregion
+
+        /// <summary>
+        /// Method used to decompress the previously compressed file and save it into its previous format.
+        /// </summary>
+        /// <param name="file">File to decompress.</param>
+        public void DecompressFile(FileStream file)
+        {
+            // Do something
+        }
     }
 }
